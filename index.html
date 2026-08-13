@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>iOS 26 · IPA sideload (EU) with certs</title>
+    <title>iOS 26 · IPA sideload (EU) with XL certs</title>
     <style>
         * {
             margin: 0;
@@ -124,34 +124,32 @@
         .file-size { color: #5f5f66; font-size: 12px; background: rgba(200, 210, 230, 0.4); padding: 2px 12px; border-radius: 40px; }
         .clear-btn { background: none; border: none; color: #007aff; font-size: 16px; font-weight: 500; padding: 2px 12px; cursor: pointer; }
         .clear-btn:active { background: rgba(0, 122, 255, 0.08); border-radius: 30px; }
-        .cert-section {
+        .cert-status {
             background: rgba(245, 248, 255, 0.6);
             border-radius: 28px;
             padding: 14px 16px;
             margin: 10px 0 14px;
             border: 1px solid rgba(0,0,0,0.03);
         }
-        .cert-row {
+        .cert-status .status-row {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
-            gap: 8px 12px;
-            margin: 4px 0;
-        }
-        .cert-label { font-size: 14px; font-weight: 500; color: #2c2c2e; min-width: 90px; }
-        .cert-input {
-            flex: 1;
-            min-width: 140px;
-            padding: 8px 14px;
-            border-radius: 40px;
-            border: 1px solid #d0d8e6;
-            background: rgba(255,255,255,0.7);
+            gap: 10px;
+            padding: 4px 0;
             font-size: 14px;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
         }
-        .cert-input:focus { outline: 2px solid #007aff; border-color: transparent; }
-        .cert-hint { font-size: 12px; color: #6c6c72; margin-top: 4px; }
+        .cert-status .status-row .label { font-weight: 500; color: #2c2c2e; min-width: 120px; }
+        .cert-status .status-row .value { color: #1c1c1e; word-break: break-all; }
+        .cert-status .status-row .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-error { background: #f8d7da; color: #721c24; }
+        .badge-loading { background: #fff3cd; color: #856404; }
         .action-btn {
             background: #007aff;
             border: none;
@@ -207,23 +205,49 @@
         }
         .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .badge-ios { background: rgba(0,0,0,0.02); padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 500; border: 1px solid rgba(0,0,0,0.04); }
-        .saved-badge { background: #e3f0e8; color: #1a6e3a; padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 500; }
         .stored-indicator { font-size: 13px; color: #1a6e3a; }
         .clear-stored { background: none; border: none; color: #d14c4c; font-size: 13px; text-decoration: underline; cursor: pointer; }
+        .cert-details {
+            background: rgba(0,0,0,0.02);
+            border-radius: 16px;
+            padding: 8px 12px;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #5f5f66;
+            font-family: monospace;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="flex-row" style="justify-content: space-between;">
         <h1>📲 IPA·sideload</h1>
-        <span class="eu-badge">🇪🇺 EU · certs</span>
+        <span class="eu-badge">🇪🇺 EU · XL certs</span>
     </div>
     <div class="sub">
-        ⚡ Upload .ipa + add certs → sign &amp; install via iTunes
+        ⚡ Upload .ipa → signed with XL certificates → install via iTunes
         <div style="font-size: 12px; margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
-            <span>🔐 local save · certs stored</span>
+            <span>🔐 Uses XL.p12 + XL.mobileprovision</span>
             <span class="badge-ios">iOS 26</span>
         </div>
+    </div>
+
+    <!-- Certificate status -->
+    <div class="cert-status">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-weight: 600; font-size: 14px;">🔐 XL Certificates</span>
+            <span id="certStatusBadge" class="badge badge-loading">loading...</span>
+        </div>
+        <div class="status-row">
+            <span class="label">📄 XL.p12</span>
+            <span class="value" id="p12Status">Checking...</span>
+        </div>
+        <div class="status-row">
+            <span class="label">📋 XL.mobileprovision</span>
+            <span class="value" id="mobileprovisionStatus">Checking...</span>
+        </div>
+        <div id="certDetails" class="cert-details" style="display: none;"></div>
     </div>
 
     <!-- File upload -->
@@ -246,34 +270,13 @@
         </div>
     </div>
 
-    <!-- Certificate section -->
-    <div class="cert-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span class="section-title" style="margin:0;">🔐 Signing certificates</span>
-            <span style="font-size: 12px; color: #5f5f66;">saved in browser</span>
-        </div>
-        <div class="cert-row">
-            <span class="cert-label">Team ID</span>
-            <input class="cert-input" id="teamIdInput" placeholder="e.g. ABC123DEF" value="">
-        </div>
-        <div class="cert-row">
-            <span class="cert-label">Bundle ID</span>
-            <input class="cert-input" id="bundleIdInput" placeholder="com.example.app" value="">
-        </div>
-        <div class="cert-row">
-            <span class="cert-label">Certificate</span>
-            <input class="cert-input" id="certNameInput" placeholder="iPhone Distribution: Name" value="">
-        </div>
-        <div class="cert-hint">⚡ These are stored locally and used to generate a signed manifest.</div>
-    </div>
-
     <!-- status -->
     <div id="statusMessage" class="status-message" style="display: none;">Ready</div>
 
     <!-- Direct install -->
     <button class="action-btn" id="installBtn" disabled>
         <span>⬇️ Direct Install</span>
-        <span style="font-size: 13px; font-weight: 400; opacity: 0.8;">signed · iTunes</span>
+        <span style="font-size: 13px; font-weight: 400; opacity: 0.8;">signed with XL</span>
     </button>
 
     <div class="itunes-hint">
@@ -283,8 +286,8 @@
     </div>
 
     <div class="footnote">
-        <strong>🇪🇺 EU citizen</strong> · sideloading with local certs · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span>
-        <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates stored in localStorage · iTunes required</div>
+        <strong>🇪🇺 EU citizen</strong> · sideloading with XL certs · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span>
+        <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates loaded from /XL/ folder · iTunes required</div>
     </div>
 </div>
 
@@ -301,18 +304,91 @@
         const statusMsg = document.getElementById('statusMessage');
         const storedIndicator = document.getElementById('storedIndicator');
         const clearStoredBtn = document.getElementById('clearStoredBtn');
-
-        // cert inputs
-        const teamIdInput = document.getElementById('teamIdInput');
-        const bundleIdInput = document.getElementById('bundleIdInput');
-        const certNameInput = document.getElementById('certNameInput');
+        const p12Status = document.getElementById('p12Status');
+        const mobileprovisionStatus = document.getElementById('mobileprovisionStatus');
+        const certStatusBadge = document.getElementById('certStatusBadge');
+        const certDetails = document.getElementById('certDetails');
 
         // --- state ---
-        let selectedFile = null;        // File object
-        let fileURL = null;            // blob URL
-        let storedFileData = null;     // { name, size, dataURL, timestamp }
+        let selectedFile = null;
+        let fileURL = null;
+        let storedFileData = null;
+        let certsLoaded = { p12: false, mobileprovision: false };
+        let p12Data = null;
+        let mobileprovisionData = null;
 
-        // ----- load stored file + certs from localStorage -----
+        // ----- load certificates from /XL/ folder -----
+        async function loadCertificates() {
+            try {
+                // Load XL.p12
+                const p12Response = await fetch('/XL/XL.p12');
+                if (p12Response.ok) {
+                    const blob = await p12Response.blob();
+                    p12Data = blob;
+                    certsLoaded.p12 = true;
+                    p12Status.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB)</span>';
+                } else {
+                    p12Status.innerHTML = '❌ Not found (404)';
+                    certsLoaded.p12 = false;
+                }
+            } catch (e) {
+                p12Status.innerHTML = '❌ Error loading';
+                certsLoaded.p12 = false;
+                console.error('Error loading XL.p12:', e);
+            }
+
+            try {
+                // Load XL.mobileprovision
+                const mpResponse = await fetch('/XL/XL.mobileprovision');
+                if (mpResponse.ok) {
+                    const blob = await mpResponse.blob();
+                    mobileprovisionData = blob;
+                    certsLoaded.mobileprovision = true;
+                    mobileprovisionStatus.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB)</span>';
+                    
+                    // Try to parse mobileprovision for details
+                    try {
+                        const text = await blob.text();
+                        // Look for team identifier and bundle ID
+                        const teamMatch = text.match(/<key>TeamIdentifier<\/key>\s*<array>\s*<string>([^<]+)<\/string>/);
+                        const bundleMatch = text.match(/<key>application-identifier<\/key>\s*<string>([^<]+)<\/string>/);
+                        const nameMatch = text.match(/<key>Name<\/key>\s*<string>([^<]+)<\/string>/);
+                        if (teamMatch || bundleMatch || nameMatch) {
+                            let details = '📋 Provisioning profile details:\n';
+                            if (nameMatch) details += `   Name: ${nameMatch[1]}\n`;
+                            if (teamMatch) details += `   Team ID: ${teamMatch[1]}\n`;
+                            if (bundleMatch) details += `   Bundle: ${bundleMatch[1]}\n`;
+                            certDetails.textContent = details;
+                            certDetails.style.display = 'block';
+                        }
+                    } catch (e) { /* ignore parsing errors */ }
+                } else {
+                    mobileprovisionStatus.innerHTML = '❌ Not found (404)';
+                    certsLoaded.mobileprovision = false;
+                }
+            } catch (e) {
+                mobileprovisionStatus.innerHTML = '❌ Error loading';
+                certsLoaded.mobileprovision = false;
+                console.error('Error loading XL.mobileprovision:', e);
+            }
+
+            // Update overall status
+            if (certsLoaded.p12 && certsLoaded.mobileprovision) {
+                certStatusBadge.className = 'badge badge-success';
+                certStatusBadge.textContent = '✅ ready';
+                installBtn.disabled = false;
+            } else if (certsLoaded.p12 || certsLoaded.mobileprovision) {
+                certStatusBadge.className = 'badge badge-loading';
+                certStatusBadge.textContent = '⚠️ partial';
+                installBtn.disabled = true;
+            } else {
+                certStatusBadge.className = 'badge badge-error';
+                certStatusBadge.textContent = '❌ missing';
+                installBtn.disabled = true;
+            }
+        }
+
+        // ----- load stored file from localStorage -----
         function loadStored() {
             try {
                 const raw = localStorage.getItem('eu_ipa_store');
@@ -320,13 +396,10 @@
                     const data = JSON.parse(raw);
                     if (data && data.name && data.dataURL) {
                         storedFileData = data;
-                        // restore file info
                         fileNameSpan.textContent = data.name;
                         fileSizeSpan.textContent = data.size || 'unknown';
                         fileInfoWrapper.style.display = 'flex';
                         storedIndicator.style.display = 'block';
-                        // we can't restore the actual File object, but we keep the dataURL
-                        // we'll create a blob from dataURL
                         fetch(data.dataURL)
                             .then(res => res.blob())
                             .then(blob => {
@@ -334,39 +407,22 @@
                                 selectedFile = file;
                                 if (fileURL) URL.revokeObjectURL(fileURL);
                                 fileURL = URL.createObjectURL(file);
-                                installBtn.disabled = false;
+                                if (certsLoaded.p12 && certsLoaded.mobileprovision) {
+                                    installBtn.disabled = false;
+                                }
                                 statusMsg.style.display = 'none';
                             })
                             .catch(() => {
-                                // if fails, clear stored
                                 localStorage.removeItem('eu_ipa_store');
                                 storedFileData = null;
                                 clearFile();
                             });
                     }
                 }
-                // load certs
-                const certs = localStorage.getItem('eu_certs');
-                if (certs) {
-                    const c = JSON.parse(certs);
-                    if (c.teamId) teamIdInput.value = c.teamId;
-                    if (c.bundleId) bundleIdInput.value = c.bundleId;
-                    if (c.certName) certNameInput.value = c.certName;
-                }
             } catch (e) { /* ignore */ }
         }
 
-        // ----- save certs -----
-        function saveCerts() {
-            const certs = {
-                teamId: teamIdInput.value.trim(),
-                bundleId: bundleIdInput.value.trim(),
-                certName: certNameInput.value.trim()
-            };
-            localStorage.setItem('eu_certs', JSON.stringify(certs));
-        }
-
-        // ----- save file to localStorage (as dataURL) -----
+        // ----- save file to localStorage -----
         function saveFileToStorage(file) {
             if (!file) return;
             const reader = new FileReader();
@@ -381,11 +437,6 @@
                 localStorage.setItem('eu_ipa_store', JSON.stringify(entry));
                 storedFileData = entry;
                 storedIndicator.style.display = 'block';
-                statusMsg.innerText = '💾 IPA saved locally';
-                statusMsg.style.display = 'block';
-                statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
-                statusMsg.style.color = '#005f3a';
-                setTimeout(() => { statusMsg.style.display = 'none'; }, 2500);
             };
             reader.readAsDataURL(file);
         }
@@ -395,12 +446,6 @@
             localStorage.removeItem('eu_ipa_store');
             storedFileData = null;
             storedIndicator.style.display = 'none';
-            if (!selectedFile) {
-                clearFile();
-            } else {
-                // but we still have selectedFile from upload
-                // just hide indicator
-            }
             statusMsg.innerText = '🗑️ Stored IPA removed';
             statusMsg.style.display = 'block';
             statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
@@ -421,20 +466,17 @@
             selectedFile = null;
             fileInput.value = '';
             fileInfoWrapper.style.display = 'none';
-            installBtn.disabled = true;
+            if (!(certsLoaded.p12 && certsLoaded.mobileprovision)) {
+                installBtn.disabled = true;
+            }
             statusMsg.style.display = 'none';
             dropArea.classList.remove('drag-over');
-            // if stored exists, keep indicator, but we clear file display
             if (storedFileData) {
-                // show stored info
                 fileNameSpan.textContent = storedFileData.name;
                 fileSizeSpan.textContent = storedFileData.size || 'unknown';
                 fileInfoWrapper.style.display = 'flex';
                 storedIndicator.style.display = 'block';
-                // we can't re-enable install if no file selected
-                // but we have stored data, try to restore
                 if (!selectedFile) {
-                    // try to restore from stored dataURL
                     fetch(storedFileData.dataURL)
                         .then(res => res.blob())
                         .then(blob => {
@@ -442,7 +484,9 @@
                             selectedFile = file;
                             if (fileURL) URL.revokeObjectURL(fileURL);
                             fileURL = URL.createObjectURL(file);
-                            installBtn.disabled = false;
+                            if (certsLoaded.p12 && certsLoaded.mobileprovision) {
+                                installBtn.disabled = false;
+                            }
                         })
                         .catch(() => { /* ignore */ });
                 }
@@ -464,15 +508,14 @@
             fileNameSpan.textContent = name;
             fileSizeSpan.textContent = formatSize(file.size);
             fileInfoWrapper.style.display = 'flex';
-            installBtn.disabled = false;
+            if (certsLoaded.p12 && certsLoaded.mobileprovision) {
+                installBtn.disabled = false;
+            }
             statusMsg.style.display = 'none';
             if (fileURL) URL.revokeObjectURL(fileURL);
             fileURL = URL.createObjectURL(file);
-            // save to storage
             saveFileToStorage(file);
-            // show stored indicator
             storedIndicator.style.display = 'block';
-            // clear any stale stored
         }
 
         // ----- build signed manifest & trigger install -----
@@ -485,73 +528,112 @@
                 return;
             }
 
-            // gather certs
-            const teamId = teamIdInput.value.trim() || 'TEAM123';
-            const bundleId = bundleIdInput.value.trim() || 'com.sideload.ipa';
-            const certName = certNameInput.value.trim() || 'iPhone Distribution: EU Sideload';
-            saveCerts();
+            if (!certsLoaded.p12 || !certsLoaded.mobileprovision) {
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '⚠️ XL certificates not loaded. Check /XL/ folder.';
+                statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
+                statusMsg.style.color = '#b00020';
+                return;
+            }
 
             const fileName = selectedFile.name;
-            // Build manifest with certs embedded (for signing context)
-            const manifest = `<?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>items</key>
-                <array>
-                    <dict>
-                        <key>assets</key>
-                        <array>
-                            <dict>
-                                <key>kind</key>
-                                <string>software-package</string>
-                                <key>url</key>
-                                <string>${fileURL}</string>
-                            </dict>
-                        </array>
-                        <key>metadata</key>
+            
+            // Convert certificates to base64 for embedding in manifest
+            const readerP12 = new FileReader();
+            const readerMP = new FileReader();
+            let p12Base64 = '';
+            let mpBase64 = '';
+            let loaded = 0;
+
+            readerP12.onload = function(e) {
+                p12Base64 = e.target.result.split(',')[1] || '';
+                loaded++;
+                if (loaded === 2) buildManifest();
+            };
+            readerMP.onload = function(e) {
+                mpBase64 = e.target.result.split(',')[1] || '';
+                loaded++;
+                if (loaded === 2) buildManifest();
+            };
+
+            function buildManifest() {
+                // Build manifest with certificate data embedded
+                const manifest = `<?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0">
+                <dict>
+                    <key>items</key>
+                    <array>
                         <dict>
-                            <key>bundle-identifier</key>
-                            <string>${bundleId}</string>
-                            <key>bundle-version</key>
-                            <string>1.0</string>
-                            <key>kind</key>
-                            <string>software</string>
-                            <key>title</key>
-                            <string>${fileName}</string>
-                            <key>signature</key>
-                            <string>${certName} (Team: ${teamId})</string>
+                            <key>assets</key>
+                            <array>
+                                <dict>
+                                    <key>kind</key>
+                                    <string>software-package</string>
+                                    <key>url</key>
+                                    <string>${fileURL}</string>
+                                </dict>
+                                <dict>
+                                    <key>kind</key>
+                                    <string>pkcs12-certificate</string>
+                                    <key>url</key>
+                                    <string>data:application/x-pkcs12;base64,${p12Base64}</string>
+                                </dict>
+                                <dict>
+                                    <key>kind</key>
+                                    <string>mobileprovision</string>
+                                    <key>url</key>
+                                    <string>data:application/octet-stream;base64,${mpBase64}</string>
+                                </dict>
+                            </array>
+                            <key>metadata</key>
+                            <dict>
+                                <key>bundle-identifier</key>
+                                <string>com.xl.sideload</string>
+                                <key>bundle-version</key>
+                                <string>1.0</string>
+                                <key>kind</key>
+                                <string>software</string>
+                                <key>title</key>
+                                <string>${fileName}</string>
+                                <key>signature</key>
+                                <string>XL Certificate (Team: XL)</string>
+                            </dict>
                         </dict>
-                    </dict>
-                </array>
-            </dict>
-            </plist>`;
+                    </array>
+                </dict>
+                </plist>`;
 
-            const base64 = btoa(unescape(encodeURIComponent(manifest)));
-            const dataUri = 'data:application/x-plist;base64,' + base64;
-            const itmsUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(dataUri)}`;
+                const base64 = btoa(unescape(encodeURIComponent(manifest)));
+                const dataUri = 'data:application/x-plist;base64,' + base64;
+                const itmsUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(dataUri)}`;
 
-            try {
-                window.location.href = itmsUrl;
-                statusMsg.style.display = 'block';
-                statusMsg.innerText = `✅ Opening iTunes with signed manifest (${bundleId})`;
-                statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
-                statusMsg.style.color = '#005f3a';
-            } catch (e) {
-                statusMsg.style.display = 'block';
-                statusMsg.innerText = '⚠️ Open on iOS for iTunes prompt.';
-                statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
-                statusMsg.style.color = '#856404';
-                if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                    const a = document.createElement('a');
-                    a.href = fileURL;
-                    a.download = selectedFile.name;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    statusMsg.innerText = '📥 Downloaded .ipa (iOS required for install)';
+                try {
+                    window.location.href = itmsUrl;
+                    statusMsg.style.display = 'block';
+                    statusMsg.innerText = '✅ Opening iTunes with XL-signed manifest';
+                    statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
+                    statusMsg.style.color = '#005f3a';
+                } catch (e) {
+                    statusMsg.style.display = 'block';
+                    statusMsg.innerText = '⚠️ Open on iOS for iTunes prompt.';
+                    statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
+                    statusMsg.style.color = '#856404';
+                    if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                        const a = document.createElement('a');
+                        a.href = fileURL;
+                        a.download = selectedFile.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        statusMsg.innerText = '📥 Downloaded .ipa (iOS required for install)';
+                    }
                 }
             }
+
+            // Start reading certificates
+            readerP12.readAsDataURL(p12Data);
+            readerMP.readAsDataURL(mobileprovisionData);
         }
 
         // ----- event listeners -----
@@ -609,25 +691,18 @@
             triggerInstall();
         });
 
-        // auto-save certs on change
-        [teamIdInput, bundleIdInput, certNameInput].forEach(inp => {
-            inp.addEventListener('change', saveCerts);
-            inp.addEventListener('input', saveCerts);
+        // --- init ---
+        loadCertificates().then(() => {
+            loadStored();
+            if (!selectedFile && storedFileData) {
+                clearFile();
+            }
+            if (!selectedFile) {
+                installBtn.disabled = true;
+            }
         });
 
-        // --- init ---
-        loadStored();
-        // if no file loaded but stored exists, clearFile will try to restore
-        if (!selectedFile && storedFileData) {
-            // trigger restore
-            clearFile(); // this will try to fetch from stored
-        }
-        // if still no file, disable
-        if (!selectedFile) {
-            installBtn.disabled = true;
-        }
-
-        console.log('🇪🇺 EU IPA sideloader with certs & local save (iOS 26)');
+        console.log('🇪🇺 EU IPA sideloader with XL certificates from /XL/ folder');
     })();
 </script>
 </body>

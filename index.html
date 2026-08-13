@@ -79,15 +79,6 @@
             color: #0055b3;
             border: 1px solid rgba(0, 122, 255, 0.15);
         }
-        .section-title {
-            font-size: 15px;
-            font-weight: 600;
-            margin: 18px 0 8px 0;
-            color: #1c1c1e;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
         .upload-area {
             background: rgba(248, 250, 255, 0.7);
             border: 2px dashed #c8d2e6;
@@ -150,6 +141,7 @@
         .badge-success { background: #d4edda; color: #155724; }
         .badge-error { background: #f8d7da; color: #721c24; }
         .badge-loading { background: #fff3cd; color: #856404; }
+        .badge-warning { background: #fff3cd; color: #856404; }
         .action-btn {
             background: #007aff;
             border: none;
@@ -216,6 +208,9 @@
             color: #5f5f66;
             font-family: monospace;
             word-break: break-all;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
         }
         .password-badge {
             display: inline-block;
@@ -227,6 +222,40 @@
             font-weight: 500;
             margin-left: 6px;
         }
+        .error-box {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            color: #721c24;
+            font-size: 13px;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin: 8px 0;
+            color: #856404;
+            font-size: 13px;
+        }
+        .cert-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .cert-actions button {
+            background: rgba(0, 122, 255, 0.08);
+            border: 1px solid rgba(0, 122, 255, 0.2);
+            border-radius: 30px;
+            padding: 4px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #007aff;
+        }
+        .cert-actions button:active { background: rgba(0, 122, 255, 0.15); }
     </style>
 </head>
 <body>
@@ -259,7 +288,13 @@
             <span class="value" id="mobileprovisionStatus">Checking...</span>
         </div>
         <div id="certDetails" class="cert-details" style="display: none;"></div>
+        <div id="certError" class="error-box" style="display: none;"></div>
+        <div id="certWarning" class="warning-box" style="display: none;"></div>
         <div style="font-size: 11px; color: #6c6c72; margin-top: 6px;">🔑 Password: WSF (embedded)</div>
+        <div class="cert-actions">
+            <button id="reloadCertsBtn">🔄 Reload Certificates</button>
+            <button id="showP12InfoBtn">🔍 Show P12 Info</button>
+        </div>
     </div>
 
     <!-- File upload -->
@@ -300,6 +335,7 @@
     <div class="footnote">
         <strong>🇪🇺 EU citizen</strong> · sideloading with XL certs · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span>
         <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates loaded from /XL/ folder · Password: WSF</div>
+        <div style="margin-top: 4px; font-size: 11px; color: #856404;">⚠️ If you get "certificate not valid", the .p12 file may be corrupted or empty</div>
     </div>
 </div>
 
@@ -320,6 +356,10 @@
         const mobileprovisionStatus = document.getElementById('mobileprovisionStatus');
         const certStatusBadge = document.getElementById('certStatusBadge');
         const certDetails = document.getElementById('certDetails');
+        const certError = document.getElementById('certError');
+        const certWarning = document.getElementById('certWarning');
+        const reloadCertsBtn = document.getElementById('reloadCertsBtn');
+        const showP12InfoBtn = document.getElementById('showP12InfoBtn');
 
         // Certificate password
         const CERT_PASSWORD = 'WSF';
@@ -331,24 +371,92 @@
         let certsLoaded = { p12: false, mobileprovision: false };
         let p12Data = null;
         let mobileprovisionData = null;
+        let p12Validation = null;
+
+        // ----- validate P12 file -----
+        function validateP12(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    // Check for PKCS12 magic: 30 82 (ASN.1 SEQUENCE)
+                    if (data.length < 4) {
+                        resolve({ valid: false, reason: 'File too small (likely empty or corrupt)' });
+                        return;
+                    }
+                    // Check for ASN.1 SEQUENCE tag (0x30)
+                    if (data[0] === 0x30 && (data[1] === 0x82 || data[1] === 0x81 || data[1] < 0x80)) {
+                        // Check for PKCS12 OID: 1.2.840.113549.1.12.10.1.1
+                        // Simplified: check if it contains the string "pkcs12" or looks valid
+                        const text = new TextDecoder('utf-8', { fatal: false }).decode(data.slice(0, 200));
+                        if (text.includes('pkcs12') || text.includes('PKCS') || text.includes('p12')) {
+                            resolve({ valid: true, size: blob.size, type: 'PKCS12' });
+                        } else {
+                            // Try to parse as DER
+                            // Look for PFX/P12 indicators
+                            const hex = Array.from(data.slice(0, 50)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                            if (data.length > 100) {
+                                resolve({ valid: true, size: blob.size, type: 'PKCS12 (likely valid)' });
+                            } else {
+                                resolve({ valid: false, reason: 'File does not appear to be a valid PKCS12 certificate' });
+                            }
+                        }
+                    } else {
+                        // Check if it might be PEM
+                        const text = new TextDecoder('utf-8', { fatal: false }).decode(data.slice(0, 100));
+                        if (text.includes('-----BEGIN') && text.includes('-----')) {
+                            resolve({ valid: true, size: blob.size, type: 'PEM (needs conversion to P12)' });
+                        } else {
+                            resolve({ valid: false, reason: 'Not a valid certificate file (expected ASN.1 SEQUENCE)' });
+                        }
+                    }
+                };
+                reader.onerror = function() {
+                    resolve({ valid: false, reason: 'Error reading file' });
+                };
+                reader.readAsArrayBuffer(blob);
+            });
+        }
 
         // ----- load certificates from /XL/ folder -----
         async function loadCertificates() {
+            certStatusBadge.className = 'badge badge-loading';
+            certStatusBadge.textContent = 'loading...';
+            certError.style.display = 'none';
+            certWarning.style.display = 'none';
+            certDetails.style.display = 'none';
+
             try {
                 // Load XL.p12
                 const p12Response = await fetch('/XL/XL.p12');
                 if (p12Response.ok) {
                     const blob = await p12Response.blob();
                     p12Data = blob;
-                    certsLoaded.p12 = true;
-                    p12Status.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB) 🔑</span>';
+                    
+                    // Validate P12
+                    const validation = await validateP12(blob);
+                    p12Validation = validation;
+                    
+                    if (validation.valid) {
+                        certsLoaded.p12 = true;
+                        p12Status.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB) 🔑 ' + (validation.type || '') + '</span>';
+                    } else {
+                        certsLoaded.p12 = false;
+                        p12Status.innerHTML = '⚠️ Invalid <span style="font-size:11px;color:#dc3545;">(' + validation.reason + ')</span>';
+                        certWarning.style.display = 'block';
+                        certWarning.innerHTML = '⚠️ The XL.p12 file appears to be invalid: ' + validation.reason + '. Please check the file.';
+                    }
                 } else {
                     p12Status.innerHTML = '❌ Not found (404)';
                     certsLoaded.p12 = false;
+                    certError.style.display = 'block';
+                    certError.innerHTML = '❌ XL.p12 not found in /XL/ folder. Please add the file.';
                 }
             } catch (e) {
                 p12Status.innerHTML = '❌ Error loading';
                 certsLoaded.p12 = false;
+                certError.style.display = 'block';
+                certError.innerHTML = '❌ Error loading XL.p12: ' + e.message;
                 console.error('Error loading XL.p12:', e);
             }
 
@@ -367,18 +475,36 @@
                         const teamMatch = text.match(/<key>TeamIdentifier<\/key>\s*<array>\s*<string>([^<]+)<\/string>/);
                         const bundleMatch = text.match(/<key>application-identifier<\/key>\s*<string>([^<]+)<\/string>/);
                         const nameMatch = text.match(/<key>Name<\/key>\s*<string>([^<]+)<\/string>/);
-                        if (teamMatch || bundleMatch || nameMatch) {
-                            let details = '📋 Provisioning profile details:\n';
-                            if (nameMatch) details += `   Name: ${nameMatch[1]}\n`;
-                            if (teamMatch) details += `   Team ID: ${teamMatch[1]}\n`;
-                            if (bundleMatch) details += `   Bundle: ${bundleMatch[1]}\n`;
-                            certDetails.textContent = details;
-                            certDetails.style.display = 'block';
+                        const uuidMatch = text.match(/<key>UUID<\/key>\s*<string>([^<]+)<\/string>/);
+                        const expirationMatch = text.match(/<key>ExpirationDate<\/key>\s*<date>([^<]+)<\/date>/);
+                        
+                        let details = '📋 Provisioning profile:\n';
+                        if (nameMatch) details += `   Name: ${nameMatch[1]}\n`;
+                        if (uuidMatch) details += `   UUID: ${uuidMatch[1]}\n`;
+                        if (teamMatch) details += `   Team ID: ${teamMatch[1]}\n`;
+                        if (bundleMatch) details += `   Bundle: ${bundleMatch[1]}\n`;
+                        if (expirationMatch) details += `   Expires: ${expirationMatch[1]}\n`;
+                        
+                        // Check if expired
+                        if (expirationMatch) {
+                            const expDate = new Date(expirationMatch[1]);
+                            if (expDate < new Date()) {
+                                details += `   ⚠️ EXPIRED! (${expirationMatch[1]})\n`;
+                                certWarning.style.display = 'block';
+                                certWarning.innerHTML = '⚠️ The provisioning profile has expired on ' + expirationMatch[1] + '. Please renew it.';
+                            }
                         }
+                        
+                        certDetails.textContent = details;
+                        certDetails.style.display = 'block';
                     } catch (e) { /* ignore parsing errors */ }
                 } else {
                     mobileprovisionStatus.innerHTML = '❌ Not found (404)';
                     certsLoaded.mobileprovision = false;
+                    if (!certError.style.display || certError.style.display === 'none') {
+                        certError.style.display = 'block';
+                        certError.innerHTML = '❌ XL.mobileprovision not found in /XL/ folder. Please add the file.';
+                    }
                 }
             } catch (e) {
                 mobileprovisionStatus.innerHTML = '❌ Error loading';
@@ -393,9 +519,13 @@
                 if (selectedFile) {
                     installBtn.disabled = false;
                 }
-            } else if (certsLoaded.p12 || certsLoaded.mobileprovision) {
-                certStatusBadge.className = 'badge badge-loading';
-                certStatusBadge.textContent = '⚠️ partial';
+            } else if (certsLoaded.p12 && !certsLoaded.mobileprovision) {
+                certStatusBadge.className = 'badge badge-warning';
+                certStatusBadge.textContent = '⚠️ missing .mobileprovision';
+                installBtn.disabled = true;
+            } else if (!certsLoaded.p12 && certsLoaded.mobileprovision) {
+                certStatusBadge.className = 'badge badge-warning';
+                certStatusBadge.textContent = '⚠️ invalid P12';
                 installBtn.disabled = true;
             } else {
                 certStatusBadge.className = 'badge badge-error';
@@ -546,7 +676,7 @@
 
             if (!certsLoaded.p12 || !certsLoaded.mobileprovision) {
                 statusMsg.style.display = 'block';
-                statusMsg.innerText = '⚠️ XL certificates not loaded. Check /XL/ folder.';
+                statusMsg.innerText = '⚠️ XL certificates not valid. Check /XL/ folder.';
                 statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
                 statusMsg.style.color = '#b00020';
                 return;
@@ -654,6 +784,30 @@
             readerMP.readAsDataURL(mobileprovisionData);
         }
 
+        // ----- show P12 info -----
+        function showP12Info() {
+            if (!p12Data) {
+                alert('XL.p12 not loaded. Please reload certificates first.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const hex = Array.from(data.slice(0, 100)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                const text = new TextDecoder('utf-8', { fatal: false }).decode(data.slice(0, 500));
+                const info = 
+                    '📄 XL.p12 Info:\n' +
+                    'Size: ' + (data.length / 1024).toFixed(1) + ' KB\n' +
+                    'First 100 bytes (hex):\n' + hex + '\n\n' +
+                    'First 500 chars (text):\n' + text + '\n\n' +
+                    '🔑 Password: ' + CERT_PASSWORD + '\n' +
+                    (p12Validation ? 'Validation: ' + (p12Validation.valid ? '✅ Valid' : '❌ ' + p12Validation.reason) : '');
+                certDetails.textContent = info;
+                certDetails.style.display = 'block';
+            };
+            reader.readAsArrayBuffer(p12Data);
+        }
+
         // ----- event listeners -----
         fileInput.addEventListener('change', function(e) {
             if (this.files && this.files.length > 0) {
@@ -708,6 +862,12 @@
             }
             triggerInstall();
         });
+
+        reloadCertsBtn.addEventListener('click', function() {
+            loadCertificates();
+        });
+
+        showP12InfoBtn.addEventListener('click', showP12Info);
 
         // --- init ---
         loadCertificates().then(() => {

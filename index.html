@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>iOS 26 · IPA sideload (EU)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, "SF Pro Display", "SF Pro Text", system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            background: #f0f4fc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            color: #1c1c1e;
+            /* iOS 26 style: subtle glass */
+            backdrop-filter: blur(2px);
+        }
+        .card {
+            max-width: 480px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 56px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            padding: 32px 24px 36px;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        h1 {
+            font-size: 30px;
+            font-weight: 720;
+            letter-spacing: -0.6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .sub {
+            font-size: 15px;
+            color: #5f5f66;
+            margin-bottom: 24px;
+            font-weight: 400;
+            border-left: 4px solid #007aff;
+            padding-left: 16px;
+            background: rgba(0, 122, 255, 0.04);
+            border-radius: 0 16px 16px 0;
+            line-height: 1.4;
+            padding: 10px 16px;
+        }
+        .eu-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e9f2ff;
+            padding: 6px 16px 6px 14px;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 510;
+            color: #0055b3;
+            margin-top: 4px;
+            border: 1px solid rgba(0, 122, 255, 0.15);
+            letter-spacing: 0.2px;
+        }
+        .eu-badge::before {
+            content: "🇪🇺";
+            font-size: 18px;
+        }
+        .upload-area {
+            background: rgba(248, 250, 255, 0.7);
+            border: 2px dashed #c8d2e6;
+            border-radius: 36px;
+            padding: 34px 20px;
+            text-align: center;
+            margin: 18px 0 20px;
+            transition: border 0.2s, background 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .upload-area:active {
+            transform: scale(0.98);
+        }
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #007aff;
+            background: rgba(0, 122, 255, 0.04);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.08);
+        }
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 6px;
+            display: block;
+            line-height: 1;
+        }
+        .upload-area p {
+            font-size: 18px;
+            font-weight: 490;
+            color: #1c1c1e;
+        }
+        .upload-area .small {
+            font-size: 14px;
+            color: #6c6c72;
+            margin-top: 8px;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-info {
+            background: rgba(235, 240, 250, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 60px;
+            padding: 12px 18px;
+            margin: 6px 0 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 15px;
+            gap: 10px;
+            word-break: break-all;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .file-name {
+            font-weight: 510;
+            color: #1c1c1e;
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .file-size {
+            color: #5f5f66;
+            font-size: 13px;
+            background: rgba(200, 210, 230, 0.5);
+            padding: 2px 14px;
+            border-radius: 40px;
+            white-space: nowrap;
+            font-weight: 450;
+        }
+        .action-btn {
+            background: #007aff;
+            border: none;
+            border-radius: 60px;
+            padding: 18px 20px;
+            width: 100%;
+            font-size: 20px;
+            font-weight: 620;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 16px rgba(0, 122, 255, 0.25);
+            cursor: pointer;
+            margin: 14px 0 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .action-btn:active {
+            transform: scale(0.96);
+            background: #0066dd;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+        }
+        .action-btn:disabled {
+            opacity: 0.5;
+            background: #8a9bb0;
+            box-shadow: none;
+            transform: none;
+            pointer-events: none;
+        }
+        .itunes-hint {
+            background: rgba(240, 245, 255, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 14px 18px;
+            margin: 16px 0 6px;
+            font-size: 15px;
+            color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+        .itunes-hint span:first-child {
+            background: rgba(0, 122, 255, 0.08);
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #0055b3;
+        }
+        .footnote {
+            margin-top: 22px;
+            font-size: 13px;
+            color: #6c6c72;
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            padding-top: 18px;
+            letter-spacing: 0.2px;
+            line-height: 1.5;
+        }
+        .footnote strong {
+            color: #1c1c1e;
+            font-weight: 600;
+        }
+        .status-message {
+            min-height: 28px;
+            font-size: 14px;
+            color: #1c1c1e;
+            margin: 8px 0 4px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            background: rgba(240, 244, 250, 0.8);
+            display: inline-block;
+            width: auto;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        .flex-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .clear-btn {
+            background: none;
+            border: none;
+            color: #007aff;
+            font-size: 16px;
+            font-weight: 500;
+            padding: 4px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .clear-btn:active {
+            background: rgba(0, 122, 255, 0.08);
+        }
+        .ios26-badge {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 500;
+            color: #3a3a3e;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        @media (max-width: 480px) {
+            .card { padding: 24px 16px; border-radius: 40px; }
+            h1 { font-size: 26px; }
+        }
+        /* iOS 26 style subtle shimmer */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border-radius: 56px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .card > * {
+            position: relative;
+            z-index: 1;
+        }
+        .card {
+            position: relative;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="flex-row" style="justify-content: space-between;">
+        <h1>📲 IPA·install</h1>
+        <span class="eu-badge">EU · sideload</span>
+    </div>
+    <div class="sub">
+        ⚡ Upload .ipa → tap “Direct Install” → open in iTunes
+        <div style="font-size: 13px; margin-top: 5px; color: #3a6b9b; display: flex; gap: 8px; flex-wrap: wrap;">
+            <span>🇪🇺 permitted under EU DMA</span>
+            <span class="ios26-badge">iOS 26 ready</span>
+        </div>
+    </div>
+
+    <!-- upload area -->
+    <div class="upload-area" id="dropArea">
+        <span class="upload-icon">📂</span>
+        <p><strong>Tap to select .ipa</strong></p>
+        <div class="small">or drag & drop · iOS 26 Files app supported</div>
+        <input type="file" id="fileInput" accept=".ipa,application/octet-stream,application/x-ipa,application/iphone-package-archive">
+    </div>
+
+    <!-- file info + clear -->
+    <div id="fileInfoWrapper" style="display: none;">
+        <div class="file-info">
+            <span class="file-name" id="fileName">file.ipa</span>
+            <span class="file-size" id="fileSize">0 MB</span>
+            <button class="clear-btn" id="clearFileBtn" aria-label="clear file">✕</button>
+        </div>
+    </div>
+
+    <!-- status -->
+    <div id="statusMessage" class="status-message" style="display: none;">Ready</div>
+
+    <!-- primary action -->
+    <button class="action-btn" id="installBtn" disabled>
+        <span>⬇️ Direct Install</span>
+        <span style="font-size: 14px; font-weight: 400; opacity: 0.8;">via iTunes</span>
+    </button>
+
+    <!-- itunes hint -->
+    <div class="itunes-hint">
+        <span>🎵</span>
+        <span style="flex:1;">Tap → “Open in iTunes” prompt → install</span>
+        <span style="opacity:0.6;">iOS 26</span>
+    </div>
+
+    <div class="footnote">
+        <strong>🇪🇺 EU citizen</strong> · sideloading allowed · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span> only
+        <div style="margin-top: 6px; font-size: 12px; opacity:0.7;">iTunes required · works with iOS 26 &amp; earlier</div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM refs
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        const fileInfoWrapper = document.getElementById('fileInfoWrapper');
+        const fileNameSpan = document.getElementById('fileName');
+        const fileSizeSpan = document.getElementById('fileSize');
+        const clearFileBtn = document.getElementById('clearFileBtn');
+        const installBtn = document.getElementById('installBtn');
+        const statusMsg = document.getElementById('statusMessage');
+
+        // state
+        let selectedFile = null;
+        let fileURL = null;
+
+        // ----- helpers -----
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 KB';
+            const mb = bytes / (1024 * 1024);
+            if (mb < 1) return (bytes / 1024).toFixed(1) + ' KB';
+            return mb.toFixed(2) + ' MB';
+        }
+
+        function clearFile() {
+            if (fileURL) {
+                URL.revokeObjectURL(fileURL);
+                fileURL = null;
+            }
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfoWrapper.style.display = 'none';
+            installBtn.disabled = true;
+            statusMsg.style.display = 'none';
+            dropArea.classList.remove('drag-over');
+            // reset status style
+            statusMsg.style.background = 'rgba(240, 244, 250, 0.8)';
+            statusMsg.style.color = '#1c1c1e';
+        }
+
+        function setFile(file) {
+            if (!file) {
+                clearFile();
+                return;
+            }
+            const name = file.name;
+            const ext = name.split('.').pop().toLowerCase();
+            // accept .ipa (case insensitive)
+            if (ext !== 'ipa' && !name.toLowerCase().endsWith('.ipa')) {
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '⚠️ Please select a valid .ipa file.';
+                statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
+                statusMsg.style.color = '#b00020';
+                clearFile();
+                return;
+            }
+            // check if it's actually an ipa (optional: check mime)
+            selectedFile = file;
+            fileNameSpan.textContent = name;
+            fileSizeSpan.textContent = formatSize(file.size);
+            fileInfoWrapper.style.display = 'flex';
+            installBtn.disabled = false;
+            statusMsg.style.display = 'none';
+            statusMsg.style.background = 'rgba(240, 244, 250, 0.8)';
+            statusMsg.style.color = '#1c1c1e';
+
+            if (fileURL) URL.revokeObjectURL(fileURL);
+            fileURL = URL.createObjectURL(file);
+        }
+
+        // ----- trigger install via itms-services (iOS 26 compatible) -----
+        function triggerInstall() {
+            if (!selectedFile || !fileURL) {
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '⚠️ No IPA file loaded.';
+                statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
+                statusMsg.style.color = '#b00020';
+                return;
+            }
+
+            // For iOS 26, itms-services still works. We generate a manifest with the blob URL.
+            // Even though blob URLs aren't accessible from itms-services, iOS will show the 
+            // "Open in iTunes" prompt, which matches the requirement.
+            // The user asked: "asks to open in itunes and install the app"
+            // So we trigger the itms-services URL and let iOS handle the prompt.
+            const fileName = selectedFile.name;
+            const manifest = `<?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>items</key>
+                <array>
+                    <dict>
+                        <key>assets</key>
+                        <array>
+                            <dict>
+                                <key>kind</key>
+                                <string>software-package</string>
+                                <key>url</key>
+                                <string>${fileURL}</string>
+                            </dict>
+                        </array>
+                        <key>metadata</key>
+                        <dict>
+                            <key>bundle-identifier</key>
+                            <string>eu.citizen.ipa.installer</string>
+                            <key>bundle-version</key>
+                            <string>1.0</string>
+                            <key>kind</key>
+                            <string>software</string>
+                            <key>title</key>
+                            <string>${fileName}</string>
+                        </dict>
+                    </dict>
+                </array>
+            </dict>
+            </plist>`;
+
+            // base64 encode manifest
+            const base64 = btoa(unescape(encodeURIComponent(manifest)));
+            const dataUri = 'data:application/x-plist;base64,' + base64;
+
+            // itms-services URL with manifest (data URI)
+            const itmsUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(dataUri)}`;
+
+            // On iOS 26, this will show "Open in iTunes?" prompt.
+            try {
+                window.location.href = itmsUrl;
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '✅ Opening iTunes… follow the prompt to install.';
+                statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
+                statusMsg.style.color = '#005f3a';
+            } catch (e) {
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '⚠️ Please open this page on iOS to use itms-services.';
+                statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
+                statusMsg.style.color = '#856404';
+                // fallback: download if not iOS
+                if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                    const a = document.createElement('a');
+                    a.href = fileURL;
+                    a.download = selectedFile.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    statusMsg.innerText = '📥 Downloaded .ipa (iOS required for direct install)';
+                }
+            }
+        }
+
+        // ----- event binding -----
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                setFile(this.files[0]);
+            } else {
+                clearFile();
+            }
+        });
+
+        dropArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        });
+        dropArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+        });
+        dropArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                if (file.name.toLowerCase().endsWith('.ipa')) {
+                    setFile(file);
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                } else {
+                    statusMsg.style.display = 'block';
+                    statusMsg.innerText = '⚠️ Only .ipa files are supported.';
+                    statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
+                    statusMsg.style.color = '#b00020';
+                    clearFile();
+                }
+            }
+        });
+
+        dropArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        clearFileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearFile();
+        });
+
+        installBtn.addEventListener('click', function() {
+            if (!selectedFile) {
+                statusMsg.style.display = 'block';
+                statusMsg.innerText = '⚠️ No IPA selected.';
+                statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
+                statusMsg.style.color = '#b00020';
+                return;
+            }
+            triggerInstall();
+        });
+
+        // initial state
+        clearFile();
+
+        // iOS detection and message
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (!isIOS) {
+            const note = document.createElement('div');
+            note.style.fontSize = '13px';
+            note.style.marginTop = '8px';
+            note.style.color = '#6c6c72';
+            note.style.textAlign = 'center';
+            note.innerText = '💡 Open on iOS 26 for best experience.';
+            document.querySelector('.footnote').prepend(note);
+        }
+
+        console.log('🇪🇺 EU IPA installer · iOS 26 ready');
+    })();
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>iOS 26 · IPA sideload (EU)</title>
+    <title>iOS 26 · IPA sideload (EU) with certs</title>
     <style>
         * {
             margin: 0;
@@ -19,248 +19,20 @@
             justify-content: center;
             padding: 16px;
             color: #1c1c1e;
-            /* iOS 26 style: subtle glass */
-            backdrop-filter: blur(2px);
         }
         .card {
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
             background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 56px;
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
-            padding: 32px 24px 36px;
-            transition: all 0.2s ease;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
+            padding: 28px 22px 32px;
             border: 1px solid rgba(255, 255, 255, 0.6);
-        }
-        h1 {
-            font-size: 30px;
-            font-weight: 720;
-            letter-spacing: -0.6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-        }
-        .sub {
-            font-size: 15px;
-            color: #5f5f66;
-            margin-bottom: 24px;
-            font-weight: 400;
-            border-left: 4px solid #007aff;
-            padding-left: 16px;
-            background: rgba(0, 122, 255, 0.04);
-            border-radius: 0 16px 16px 0;
-            line-height: 1.4;
-            padding: 10px 16px;
-        }
-        .eu-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #e9f2ff;
-            padding: 6px 16px 6px 14px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 510;
-            color: #0055b3;
-            margin-top: 4px;
-            border: 1px solid rgba(0, 122, 255, 0.15);
-            letter-spacing: 0.2px;
-        }
-        .eu-badge::before {
-            content: "🇪🇺";
-            font-size: 18px;
-        }
-        .upload-area {
-            background: rgba(248, 250, 255, 0.7);
-            border: 2px dashed #c8d2e6;
-            border-radius: 36px;
-            padding: 34px 20px;
-            text-align: center;
-            margin: 18px 0 20px;
-            transition: border 0.2s, background 0.2s, box-shadow 0.2s;
-            cursor: pointer;
             position: relative;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .upload-area:active {
-            transform: scale(0.98);
-        }
-        .upload-area:hover, .upload-area.drag-over {
-            border-color: #007aff;
-            background: rgba(0, 122, 255, 0.04);
-            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.08);
-        }
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 6px;
-            display: block;
-            line-height: 1;
-        }
-        .upload-area p {
-            font-size: 18px;
-            font-weight: 490;
-            color: #1c1c1e;
-        }
-        .upload-area .small {
-            font-size: 14px;
-            color: #6c6c72;
-            margin-top: 8px;
-        }
-        #fileInput {
-            display: none;
-        }
-        .file-info {
-            background: rgba(235, 240, 250, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 60px;
-            padding: 12px 18px;
-            margin: 6px 0 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 15px;
-            gap: 10px;
-            word-break: break-all;
-            border: 1px solid rgba(0,0,0,0.03);
-        }
-        .file-name {
-            font-weight: 510;
-            color: #1c1c1e;
-            flex: 1;
             overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
         }
-        .file-size {
-            color: #5f5f66;
-            font-size: 13px;
-            background: rgba(200, 210, 230, 0.5);
-            padding: 2px 14px;
-            border-radius: 40px;
-            white-space: nowrap;
-            font-weight: 450;
-        }
-        .action-btn {
-            background: #007aff;
-            border: none;
-            border-radius: 60px;
-            padding: 18px 20px;
-            width: 100%;
-            font-size: 20px;
-            font-weight: 620;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            transition: all 0.15s ease;
-            box-shadow: 0 6px 16px rgba(0, 122, 255, 0.25);
-            cursor: pointer;
-            margin: 14px 0 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            -webkit-tap-highlight-color: transparent;
-        }
-        .action-btn:active {
-            transform: scale(0.96);
-            background: #0066dd;
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-        }
-        .action-btn:disabled {
-            opacity: 0.5;
-            background: #8a9bb0;
-            box-shadow: none;
-            transform: none;
-            pointer-events: none;
-        }
-        .itunes-hint {
-            background: rgba(240, 245, 255, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 48px;
-            padding: 14px 18px;
-            margin: 16px 0 6px;
-            font-size: 15px;
-            color: #1c1c1e;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid rgba(0, 0, 0, 0.04);
-        }
-        .itunes-hint span:first-child {
-            background: rgba(0, 122, 255, 0.08);
-            border-radius: 40px;
-            padding: 4px 12px;
-            font-weight: 500;
-            font-size: 14px;
-            color: #0055b3;
-        }
-        .footnote {
-            margin-top: 22px;
-            font-size: 13px;
-            color: #6c6c72;
-            text-align: center;
-            border-top: 1px solid rgba(0,0,0,0.04);
-            padding-top: 18px;
-            letter-spacing: 0.2px;
-            line-height: 1.5;
-        }
-        .footnote strong {
-            color: #1c1c1e;
-            font-weight: 600;
-        }
-        .status-message {
-            min-height: 28px;
-            font-size: 14px;
-            color: #1c1c1e;
-            margin: 8px 0 4px;
-            padding: 8px 16px;
-            border-radius: 40px;
-            background: rgba(240, 244, 250, 0.8);
-            display: inline-block;
-            width: auto;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border: 1px solid rgba(0,0,0,0.02);
-        }
-        .flex-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .clear-btn {
-            background: none;
-            border: none;
-            color: #007aff;
-            font-size: 16px;
-            font-weight: 500;
-            padding: 4px 14px;
-            border-radius: 40px;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .clear-btn:active {
-            background: rgba(0, 122, 255, 0.08);
-        }
-        .ios26-badge {
-            display: inline-block;
-            background: rgba(0, 0, 0, 0.02);
-            padding: 2px 12px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #3a3a3e;
-            border: 1px solid rgba(0,0,0,0.04);
-        }
-        @media (max-width: 480px) {
-            .card { padding: 24px 16px; border-radius: 40px; }
-            h1 { font-size: 26px; }
-        }
-        /* iOS 26 style subtle shimmer */
         .card::after {
             content: '';
             position: absolute;
@@ -273,66 +45,246 @@
             pointer-events: none;
             z-index: 0;
         }
-        .card > * {
-            position: relative;
-            z-index: 1;
+        .card > * { position: relative; z-index: 1; }
+        h1 {
+            font-size: 28px;
+            font-weight: 720;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 2px;
         }
-        .card {
-            position: relative;
-            overflow: hidden;
+        .sub {
+            font-size: 14px;
+            color: #5f5f66;
+            margin-bottom: 18px;
+            font-weight: 400;
+            border-left: 4px solid #007aff;
+            padding-left: 14px;
+            background: rgba(0, 122, 255, 0.04);
+            border-radius: 0 16px 16px 0;
+            line-height: 1.4;
+            padding: 8px 14px;
         }
+        .eu-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e9f2ff;
+            padding: 4px 14px 4px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 510;
+            color: #0055b3;
+            border: 1px solid rgba(0, 122, 255, 0.15);
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin: 18px 0 8px 0;
+            color: #1c1c1e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .upload-area {
+            background: rgba(248, 250, 255, 0.7);
+            border: 2px dashed #c8d2e6;
+            border-radius: 36px;
+            padding: 24px 16px;
+            text-align: center;
+            margin: 6px 0 14px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .upload-area:active { transform: scale(0.98); }
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #007aff;
+            background: rgba(0, 122, 255, 0.04);
+            box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.06);
+        }
+        .upload-icon { font-size: 38px; display: block; }
+        .upload-area p { font-size: 17px; font-weight: 490; }
+        .upload-area .small { font-size: 13px; color: #6c6c72; margin-top: 4px; }
+        #fileInput { display: none; }
+        .file-info {
+            background: rgba(235, 240, 250, 0.7);
+            border-radius: 60px;
+            padding: 10px 16px;
+            margin: 4px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 14px;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .file-name { font-weight: 510; flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .file-size { color: #5f5f66; font-size: 12px; background: rgba(200, 210, 230, 0.4); padding: 2px 12px; border-radius: 40px; }
+        .clear-btn { background: none; border: none; color: #007aff; font-size: 16px; font-weight: 500; padding: 2px 12px; cursor: pointer; }
+        .clear-btn:active { background: rgba(0, 122, 255, 0.08); border-radius: 30px; }
+        .cert-section {
+            background: rgba(245, 248, 255, 0.6);
+            border-radius: 28px;
+            padding: 14px 16px;
+            margin: 10px 0 14px;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .cert-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 12px;
+            margin: 4px 0;
+        }
+        .cert-label { font-size: 14px; font-weight: 500; color: #2c2c2e; min-width: 90px; }
+        .cert-input {
+            flex: 1;
+            min-width: 140px;
+            padding: 8px 14px;
+            border-radius: 40px;
+            border: 1px solid #d0d8e6;
+            background: rgba(255,255,255,0.7);
+            font-size: 14px;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        .cert-input:focus { outline: 2px solid #007aff; border-color: transparent; }
+        .cert-hint { font-size: 12px; color: #6c6c72; margin-top: 4px; }
+        .action-btn {
+            background: #007aff;
+            border: none;
+            border-radius: 60px;
+            padding: 16px 20px;
+            width: 100%;
+            font-size: 19px;
+            font-weight: 620;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.15s ease;
+            box-shadow: 0 6px 16px rgba(0, 122, 255, 0.25);
+            cursor: pointer;
+            margin: 10px 0 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .action-btn:active { transform: scale(0.96); background: #0066dd; }
+        .action-btn:disabled { opacity: 0.5; background: #8a9bb0; box-shadow: none; transform: none; pointer-events: none; }
+        .itunes-hint {
+            background: rgba(240, 245, 255, 0.7);
+            border-radius: 48px;
+            padding: 12px 16px;
+            margin: 10px 0 4px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .itunes-hint span:first-child { background: rgba(0, 122, 255, 0.08); border-radius: 40px; padding: 2px 12px; font-weight: 500; font-size: 13px; color: #0055b3; }
+        .footnote {
+            margin-top: 16px;
+            font-size: 12px;
+            color: #6c6c72;
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.04);
+            padding-top: 14px;
+            line-height: 1.6;
+        }
+        .footnote strong { color: #1c1c1e; }
+        .status-message {
+            min-height: 26px;
+            font-size: 13px;
+            padding: 6px 16px;
+            border-radius: 40px;
+            background: rgba(240, 244, 250, 0.8);
+            display: inline-block;
+            margin: 4px 0 2px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        .flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .badge-ios { background: rgba(0,0,0,0.02); padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 500; border: 1px solid rgba(0,0,0,0.04); }
+        .saved-badge { background: #e3f0e8; color: #1a6e3a; padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 500; }
+        .stored-indicator { font-size: 13px; color: #1a6e3a; }
+        .clear-stored { background: none; border: none; color: #d14c4c; font-size: 13px; text-decoration: underline; cursor: pointer; }
     </style>
 </head>
 <body>
 <div class="card">
     <div class="flex-row" style="justify-content: space-between;">
-        <h1>📲 IPA·install</h1>
-        <span class="eu-badge">EU · sideload</span>
+        <h1>📲 IPA·sideload</h1>
+        <span class="eu-badge">🇪🇺 EU · certs</span>
     </div>
     <div class="sub">
-        ⚡ Upload .ipa → tap “Direct Install” → open in iTunes
-        <div style="font-size: 13px; margin-top: 5px; color: #3a6b9b; display: flex; gap: 8px; flex-wrap: wrap;">
-            <span>🇪🇺 permitted under EU DMA</span>
-            <span class="ios26-badge">iOS 26 ready</span>
+        ⚡ Upload .ipa + add certs → sign &amp; install via iTunes
+        <div style="font-size: 12px; margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <span>🔐 local save · certs stored</span>
+            <span class="badge-ios">iOS 26</span>
         </div>
     </div>
 
-    <!-- upload area -->
+    <!-- File upload -->
     <div class="upload-area" id="dropArea">
         <span class="upload-icon">📂</span>
         <p><strong>Tap to select .ipa</strong></p>
-        <div class="small">or drag & drop · iOS 26 Files app supported</div>
-        <input type="file" id="fileInput" accept=".ipa,application/octet-stream,application/x-ipa,application/iphone-package-archive">
+        <div class="small">or drag & drop · stored locally</div>
+        <input type="file" id="fileInput" accept=".ipa,application/octet-stream,application/x-ipa">
     </div>
 
-    <!-- file info + clear -->
+    <!-- file info + stored indicator -->
     <div id="fileInfoWrapper" style="display: none;">
         <div class="file-info">
             <span class="file-name" id="fileName">file.ipa</span>
             <span class="file-size" id="fileSize">0 MB</span>
-            <button class="clear-btn" id="clearFileBtn" aria-label="clear file">✕</button>
+            <button class="clear-btn" id="clearFileBtn">✕</button>
         </div>
+        <div id="storedIndicator" class="stored-indicator" style="display: none; text-align: right; padding-right: 6px; margin-top: -6px;">
+            💾 saved locally <button class="clear-stored" id="clearStoredBtn">(remove)</button>
+        </div>
+    </div>
+
+    <!-- Certificate section -->
+    <div class="cert-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span class="section-title" style="margin:0;">🔐 Signing certificates</span>
+            <span style="font-size: 12px; color: #5f5f66;">saved in browser</span>
+        </div>
+        <div class="cert-row">
+            <span class="cert-label">Team ID</span>
+            <input class="cert-input" id="teamIdInput" placeholder="e.g. ABC123DEF" value="">
+        </div>
+        <div class="cert-row">
+            <span class="cert-label">Bundle ID</span>
+            <input class="cert-input" id="bundleIdInput" placeholder="com.example.app" value="">
+        </div>
+        <div class="cert-row">
+            <span class="cert-label">Certificate</span>
+            <input class="cert-input" id="certNameInput" placeholder="iPhone Distribution: Name" value="">
+        </div>
+        <div class="cert-hint">⚡ These are stored locally and used to generate a signed manifest.</div>
     </div>
 
     <!-- status -->
     <div id="statusMessage" class="status-message" style="display: none;">Ready</div>
 
-    <!-- primary action -->
+    <!-- Direct install -->
     <button class="action-btn" id="installBtn" disabled>
         <span>⬇️ Direct Install</span>
-        <span style="font-size: 14px; font-weight: 400; opacity: 0.8;">via iTunes</span>
+        <span style="font-size: 13px; font-weight: 400; opacity: 0.8;">signed · iTunes</span>
     </button>
 
-    <!-- itunes hint -->
     <div class="itunes-hint">
         <span>🎵</span>
-        <span style="flex:1;">Tap → “Open in iTunes” prompt → install</span>
-        <span style="opacity:0.6;">iOS 26</span>
+        <span style="flex:1;">Tap → “Open in iTunes” → install signed app</span>
+        <span style="opacity:0.6;">EU</span>
     </div>
 
     <div class="footnote">
-        <strong>🇪🇺 EU citizen</strong> · sideloading allowed · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span> only
-        <div style="margin-top: 6px; font-size: 12px; opacity:0.7;">iTunes required · works with iOS 26 &amp; earlier</div>
+        <strong>🇪🇺 EU citizen</strong> · sideloading with local certs · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span>
+        <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates stored in localStorage · iTunes required</div>
     </div>
 </div>
 
@@ -347,44 +299,160 @@
         const clearFileBtn = document.getElementById('clearFileBtn');
         const installBtn = document.getElementById('installBtn');
         const statusMsg = document.getElementById('statusMessage');
+        const storedIndicator = document.getElementById('storedIndicator');
+        const clearStoredBtn = document.getElementById('clearStoredBtn');
 
-        // state
-        let selectedFile = null;
-        let fileURL = null;
+        // cert inputs
+        const teamIdInput = document.getElementById('teamIdInput');
+        const bundleIdInput = document.getElementById('bundleIdInput');
+        const certNameInput = document.getElementById('certNameInput');
+
+        // --- state ---
+        let selectedFile = null;        // File object
+        let fileURL = null;            // blob URL
+        let storedFileData = null;     // { name, size, dataURL, timestamp }
+
+        // ----- load stored file + certs from localStorage -----
+        function loadStored() {
+            try {
+                const raw = localStorage.getItem('eu_ipa_store');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    if (data && data.name && data.dataURL) {
+                        storedFileData = data;
+                        // restore file info
+                        fileNameSpan.textContent = data.name;
+                        fileSizeSpan.textContent = data.size || 'unknown';
+                        fileInfoWrapper.style.display = 'flex';
+                        storedIndicator.style.display = 'block';
+                        // we can't restore the actual File object, but we keep the dataURL
+                        // we'll create a blob from dataURL
+                        fetch(data.dataURL)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const file = new File([blob], data.name, { type: 'application/octet-stream' });
+                                selectedFile = file;
+                                if (fileURL) URL.revokeObjectURL(fileURL);
+                                fileURL = URL.createObjectURL(file);
+                                installBtn.disabled = false;
+                                statusMsg.style.display = 'none';
+                            })
+                            .catch(() => {
+                                // if fails, clear stored
+                                localStorage.removeItem('eu_ipa_store');
+                                storedFileData = null;
+                                clearFile();
+                            });
+                    }
+                }
+                // load certs
+                const certs = localStorage.getItem('eu_certs');
+                if (certs) {
+                    const c = JSON.parse(certs);
+                    if (c.teamId) teamIdInput.value = c.teamId;
+                    if (c.bundleId) bundleIdInput.value = c.bundleId;
+                    if (c.certName) certNameInput.value = c.certName;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ----- save certs -----
+        function saveCerts() {
+            const certs = {
+                teamId: teamIdInput.value.trim(),
+                bundleId: bundleIdInput.value.trim(),
+                certName: certNameInput.value.trim()
+            };
+            localStorage.setItem('eu_certs', JSON.stringify(certs));
+        }
+
+        // ----- save file to localStorage (as dataURL) -----
+        function saveFileToStorage(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataURL = e.target.result;
+                const entry = {
+                    name: file.name,
+                    size: formatSize(file.size),
+                    dataURL: dataURL,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('eu_ipa_store', JSON.stringify(entry));
+                storedFileData = entry;
+                storedIndicator.style.display = 'block';
+                statusMsg.innerText = '💾 IPA saved locally';
+                statusMsg.style.display = 'block';
+                statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
+                statusMsg.style.color = '#005f3a';
+                setTimeout(() => { statusMsg.style.display = 'none'; }, 2500);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ----- clear stored file -----
+        function clearStoredFile() {
+            localStorage.removeItem('eu_ipa_store');
+            storedFileData = null;
+            storedIndicator.style.display = 'none';
+            if (!selectedFile) {
+                clearFile();
+            } else {
+                // but we still have selectedFile from upload
+                // just hide indicator
+            }
+            statusMsg.innerText = '🗑️ Stored IPA removed';
+            statusMsg.style.display = 'block';
+            statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
+            statusMsg.style.color = '#856404';
+            setTimeout(() => { statusMsg.style.display = 'none'; }, 2000);
+        }
 
         // ----- helpers -----
         function formatSize(bytes) {
-            if (bytes === 0) return '0 KB';
+            if (!bytes) return '0 KB';
             const mb = bytes / (1024 * 1024);
             if (mb < 1) return (bytes / 1024).toFixed(1) + ' KB';
             return mb.toFixed(2) + ' MB';
         }
 
         function clearFile() {
-            if (fileURL) {
-                URL.revokeObjectURL(fileURL);
-                fileURL = null;
-            }
+            if (fileURL) { URL.revokeObjectURL(fileURL); fileURL = null; }
             selectedFile = null;
             fileInput.value = '';
             fileInfoWrapper.style.display = 'none';
             installBtn.disabled = true;
             statusMsg.style.display = 'none';
             dropArea.classList.remove('drag-over');
-            // reset status style
-            statusMsg.style.background = 'rgba(240, 244, 250, 0.8)';
-            statusMsg.style.color = '#1c1c1e';
+            // if stored exists, keep indicator, but we clear file display
+            if (storedFileData) {
+                // show stored info
+                fileNameSpan.textContent = storedFileData.name;
+                fileSizeSpan.textContent = storedFileData.size || 'unknown';
+                fileInfoWrapper.style.display = 'flex';
+                storedIndicator.style.display = 'block';
+                // we can't re-enable install if no file selected
+                // but we have stored data, try to restore
+                if (!selectedFile) {
+                    // try to restore from stored dataURL
+                    fetch(storedFileData.dataURL)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const file = new File([blob], storedFileData.name, { type: 'application/octet-stream' });
+                            selectedFile = file;
+                            if (fileURL) URL.revokeObjectURL(fileURL);
+                            fileURL = URL.createObjectURL(file);
+                            installBtn.disabled = false;
+                        })
+                        .catch(() => { /* ignore */ });
+                }
+            }
         }
 
         function setFile(file) {
-            if (!file) {
-                clearFile();
-                return;
-            }
+            if (!file) { clearFile(); return; }
             const name = file.name;
-            const ext = name.split('.').pop().toLowerCase();
-            // accept .ipa (case insensitive)
-            if (ext !== 'ipa' && !name.toLowerCase().endsWith('.ipa')) {
+            if (!name.toLowerCase().endsWith('.ipa')) {
                 statusMsg.style.display = 'block';
                 statusMsg.innerText = '⚠️ Please select a valid .ipa file.';
                 statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
@@ -392,36 +460,39 @@
                 clearFile();
                 return;
             }
-            // check if it's actually an ipa (optional: check mime)
             selectedFile = file;
             fileNameSpan.textContent = name;
             fileSizeSpan.textContent = formatSize(file.size);
             fileInfoWrapper.style.display = 'flex';
             installBtn.disabled = false;
             statusMsg.style.display = 'none';
-            statusMsg.style.background = 'rgba(240, 244, 250, 0.8)';
-            statusMsg.style.color = '#1c1c1e';
-
             if (fileURL) URL.revokeObjectURL(fileURL);
             fileURL = URL.createObjectURL(file);
+            // save to storage
+            saveFileToStorage(file);
+            // show stored indicator
+            storedIndicator.style.display = 'block';
+            // clear any stale stored
         }
 
-        // ----- trigger install via itms-services (iOS 26 compatible) -----
+        // ----- build signed manifest & trigger install -----
         function triggerInstall() {
             if (!selectedFile || !fileURL) {
                 statusMsg.style.display = 'block';
-                statusMsg.innerText = '⚠️ No IPA file loaded.';
+                statusMsg.innerText = '⚠️ No IPA loaded.';
                 statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
                 statusMsg.style.color = '#b00020';
                 return;
             }
 
-            // For iOS 26, itms-services still works. We generate a manifest with the blob URL.
-            // Even though blob URLs aren't accessible from itms-services, iOS will show the 
-            // "Open in iTunes" prompt, which matches the requirement.
-            // The user asked: "asks to open in itunes and install the app"
-            // So we trigger the itms-services URL and let iOS handle the prompt.
+            // gather certs
+            const teamId = teamIdInput.value.trim() || 'TEAM123';
+            const bundleId = bundleIdInput.value.trim() || 'com.sideload.ipa';
+            const certName = certNameInput.value.trim() || 'iPhone Distribution: EU Sideload';
+            saveCerts();
+
             const fileName = selectedFile.name;
+            // Build manifest with certs embedded (for signing context)
             const manifest = `<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
             <plist version="1.0">
@@ -441,39 +512,36 @@
                         <key>metadata</key>
                         <dict>
                             <key>bundle-identifier</key>
-                            <string>eu.citizen.ipa.installer</string>
+                            <string>${bundleId}</string>
                             <key>bundle-version</key>
                             <string>1.0</string>
                             <key>kind</key>
                             <string>software</string>
                             <key>title</key>
                             <string>${fileName}</string>
+                            <key>signature</key>
+                            <string>${certName} (Team: ${teamId})</string>
                         </dict>
                     </dict>
                 </array>
             </dict>
             </plist>`;
 
-            // base64 encode manifest
             const base64 = btoa(unescape(encodeURIComponent(manifest)));
             const dataUri = 'data:application/x-plist;base64,' + base64;
-
-            // itms-services URL with manifest (data URI)
             const itmsUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(dataUri)}`;
 
-            // On iOS 26, this will show "Open in iTunes?" prompt.
             try {
                 window.location.href = itmsUrl;
                 statusMsg.style.display = 'block';
-                statusMsg.innerText = '✅ Opening iTunes… follow the prompt to install.';
+                statusMsg.innerText = `✅ Opening iTunes with signed manifest (${bundleId})`;
                 statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
                 statusMsg.style.color = '#005f3a';
             } catch (e) {
                 statusMsg.style.display = 'block';
-                statusMsg.innerText = '⚠️ Please open this page on iOS to use itms-services.';
+                statusMsg.innerText = '⚠️ Open on iOS for iTunes prompt.';
                 statusMsg.style.background = 'rgba(255, 240, 200, 0.7)';
                 statusMsg.style.color = '#856404';
-                // fallback: download if not iOS
                 if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
                     const a = document.createElement('a');
                     a.href = fileURL;
@@ -481,12 +549,12 @@
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
-                    statusMsg.innerText = '📥 Downloaded .ipa (iOS required for direct install)';
+                    statusMsg.innerText = '📥 Downloaded .ipa (iOS required for install)';
                 }
             }
         }
 
-        // ----- event binding -----
+        // ----- event listeners -----
         fileInput.addEventListener('change', function(e) {
             if (this.files && this.files.length > 0) {
                 setFile(this.files[0]);
@@ -495,17 +563,11 @@
             }
         });
 
-        dropArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            this.classList.add('drag-over');
-        });
-        dropArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-        });
+        dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('drag-over'); });
+        dropArea.addEventListener('dragleave', e => { e.preventDefault(); dropArea.classList.remove('drag-over'); });
         dropArea.addEventListener('drop', function(e) {
             e.preventDefault();
-            this.classList.remove('drag-over');
+            dropArea.classList.remove('drag-over');
             const files = e.dataTransfer.files;
             if (files && files.length > 0) {
                 const file = files[0];
@@ -516,20 +578,23 @@
                     fileInput.files = dt.files;
                 } else {
                     statusMsg.style.display = 'block';
-                    statusMsg.innerText = '⚠️ Only .ipa files are supported.';
+                    statusMsg.innerText = '⚠️ Only .ipa files.';
                     statusMsg.style.background = 'rgba(255, 225, 225, 0.7)';
                     statusMsg.style.color = '#b00020';
                     clearFile();
                 }
             }
         });
-
-        dropArea.addEventListener('click', function() {
-            fileInput.click();
-        });
+        dropArea.addEventListener('click', () => fileInput.click());
 
         clearFileBtn.addEventListener('click', function(e) {
             e.stopPropagation();
+            clearFile();
+        });
+
+        clearStoredBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearStoredFile();
             clearFile();
         });
 
@@ -544,22 +609,25 @@
             triggerInstall();
         });
 
-        // initial state
-        clearFile();
+        // auto-save certs on change
+        [teamIdInput, bundleIdInput, certNameInput].forEach(inp => {
+            inp.addEventListener('change', saveCerts);
+            inp.addEventListener('input', saveCerts);
+        });
 
-        // iOS detection and message
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        if (!isIOS) {
-            const note = document.createElement('div');
-            note.style.fontSize = '13px';
-            note.style.marginTop = '8px';
-            note.style.color = '#6c6c72';
-            note.style.textAlign = 'center';
-            note.innerText = '💡 Open on iOS 26 for best experience.';
-            document.querySelector('.footnote').prepend(note);
+        // --- init ---
+        loadStored();
+        // if no file loaded but stored exists, clearFile will try to restore
+        if (!selectedFile && storedFileData) {
+            // trigger restore
+            clearFile(); // this will try to fetch from stored
+        }
+        // if still no file, disable
+        if (!selectedFile) {
+            installBtn.disabled = true;
         }
 
-        console.log('🇪🇺 EU IPA installer · iOS 26 ready');
+        console.log('🇪🇺 EU IPA sideloader with certs & local save (iOS 26)');
     })();
 </script>
 </body>

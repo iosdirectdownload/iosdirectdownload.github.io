@@ -217,6 +217,16 @@
             font-family: monospace;
             word-break: break-all;
         }
+        .password-badge {
+            display: inline-block;
+            background: rgba(0, 122, 255, 0.08);
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            color: #0055b3;
+            font-weight: 500;
+            margin-left: 6px;
+        }
     </style>
 </head>
 <body>
@@ -230,6 +240,7 @@
         <div style="font-size: 12px; margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap;">
             <span>🔐 Uses XL.p12 + XL.mobileprovision</span>
             <span class="badge-ios">iOS 26</span>
+            <span class="password-badge">🔑 password: WSF</span>
         </div>
     </div>
 
@@ -248,6 +259,7 @@
             <span class="value" id="mobileprovisionStatus">Checking...</span>
         </div>
         <div id="certDetails" class="cert-details" style="display: none;"></div>
+        <div style="font-size: 11px; color: #6c6c72; margin-top: 6px;">🔑 Password: WSF (embedded)</div>
     </div>
 
     <!-- File upload -->
@@ -287,7 +299,7 @@
 
     <div class="footnote">
         <strong>🇪🇺 EU citizen</strong> · sideloading with XL certs · <span style="background: rgba(0,0,0,0.03); padding: 2px 12px; border-radius: 30px;">.ipa</span>
-        <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates loaded from /XL/ folder · iTunes required</div>
+        <div style="margin-top: 4px; font-size: 11px; opacity:0.7;">Certificates loaded from /XL/ folder · Password: WSF</div>
     </div>
 </div>
 
@@ -309,6 +321,9 @@
         const certStatusBadge = document.getElementById('certStatusBadge');
         const certDetails = document.getElementById('certDetails');
 
+        // Certificate password
+        const CERT_PASSWORD = 'WSF';
+
         // --- state ---
         let selectedFile = null;
         let fileURL = null;
@@ -326,7 +341,7 @@
                     const blob = await p12Response.blob();
                     p12Data = blob;
                     certsLoaded.p12 = true;
-                    p12Status.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB)</span>';
+                    p12Status.innerHTML = '✅ Loaded <span style="font-size:11px;color:#6c6c72;">(' + (blob.size / 1024).toFixed(1) + ' KB) 🔑</span>';
                 } else {
                     p12Status.innerHTML = '❌ Not found (404)';
                     certsLoaded.p12 = false;
@@ -349,7 +364,6 @@
                     // Try to parse mobileprovision for details
                     try {
                         const text = await blob.text();
-                        // Look for team identifier and bundle ID
                         const teamMatch = text.match(/<key>TeamIdentifier<\/key>\s*<array>\s*<string>([^<]+)<\/string>/);
                         const bundleMatch = text.match(/<key>application-identifier<\/key>\s*<string>([^<]+)<\/string>/);
                         const nameMatch = text.match(/<key>Name<\/key>\s*<string>([^<]+)<\/string>/);
@@ -376,7 +390,9 @@
             if (certsLoaded.p12 && certsLoaded.mobileprovision) {
                 certStatusBadge.className = 'badge badge-success';
                 certStatusBadge.textContent = '✅ ready';
-                installBtn.disabled = false;
+                if (selectedFile) {
+                    installBtn.disabled = false;
+                }
             } else if (certsLoaded.p12 || certsLoaded.mobileprovision) {
                 certStatusBadge.className = 'badge badge-loading';
                 certStatusBadge.textContent = '⚠️ partial';
@@ -557,7 +573,7 @@
             };
 
             function buildManifest() {
-                // Build manifest with certificate data embedded
+                // Build manifest with certificate data embedded and password
                 const manifest = `<?xml version="1.0" encoding="UTF-8"?>
                 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
                 <plist version="1.0">
@@ -578,6 +594,8 @@
                                     <string>pkcs12-certificate</string>
                                     <key>url</key>
                                     <string>data:application/x-pkcs12;base64,${p12Base64}</string>
+                                    <key>password</key>
+                                    <string>${CERT_PASSWORD}</string>
                                 </dict>
                                 <dict>
                                     <key>kind</key>
@@ -597,7 +615,7 @@
                                 <key>title</key>
                                 <string>${fileName}</string>
                                 <key>signature</key>
-                                <string>XL Certificate (Team: XL)</string>
+                                <string>XL Certificate (Team: XL) 🔑 WSF</string>
                             </dict>
                         </dict>
                     </array>
@@ -611,7 +629,7 @@
                 try {
                     window.location.href = itmsUrl;
                     statusMsg.style.display = 'block';
-                    statusMsg.innerText = '✅ Opening iTunes with XL-signed manifest';
+                    statusMsg.innerText = '✅ Opening iTunes with XL-signed manifest (🔑 WSF)';
                     statusMsg.style.background = 'rgba(210, 240, 220, 0.7)';
                     statusMsg.style.color = '#005f3a';
                 } catch (e) {
@@ -702,7 +720,7 @@
             }
         });
 
-        console.log('🇪🇺 EU IPA sideloader with XL certificates from /XL/ folder');
+        console.log('🇪🇺 EU IPA sideloader with XL certificates (password: WSF)');
     })();
 </script>
 </body>
